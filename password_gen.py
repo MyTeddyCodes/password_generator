@@ -4,9 +4,6 @@ import secrets
 import sys
 
 
-password_length_arg: int = int(sys.argv[1])
-
-
 def create_password(length):
     # Combines letters,numbers, and symbols
     chars = string.ascii_letters + string.digits + string.punctuation
@@ -36,7 +33,8 @@ def run_password_generator(size):
 
 
 def main():
-    if password_length_arg:
+    if (len(sys.argv) > 1):
+        password_length_arg: int = int(sys.argv[1])
         cli_password_generator(password_length_arg)
         return
 
