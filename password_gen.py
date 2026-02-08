@@ -1,3 +1,4 @@
+from rich import print
 import string
 import secrets
 import sys
@@ -19,19 +20,19 @@ def cli_password_generator(length):
 def run_password_generator(size):
 
     if size < 4:
-        print("Too short! Try 8 or more.")
+        print("[red]Too short! Try 8 or more.[/]")
     else:
         pwd = create_password(size)
 
         if size < 8:
-            strength = "WEAK (Low Security)"
+            strength = "[red dim]WEAK (Low Security)[/]"
         elif size <= 12:
-            strength = "MEDIUM (Good)"
+            strength = "[yellow dim]MEDIUM (Good)[/]"
         else:
-            strength = "STRONG (Excellent)"
+            strength = "[green dim]STRONG (Excellent)[/]"
 
-        print(f"\nYour Password:{pwd}")
-        print(f"Strength:{strength}\n")
+        print(f"\nYour Password: [underline bold bright_white]{pwd}[/]")
+        print(f"Strength: {strength}\n")
 
 
 def main():
