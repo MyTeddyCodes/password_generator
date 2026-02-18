@@ -1,7 +1,19 @@
-from rich import print
+from rich import print, box
+from rich.console import Console
+from rich.table import Table
 import string
 import secrets
-import sys
+
+console = Console()
+
+table = Table(show_header=True,
+              header_style="italic white",
+              expand="True",
+              box=box.MINIMAL,
+              )
+
+table.add_column("Strength", justify="center")
+table.add_column("Password", justify="center", ratio=3)
 
 
 def create_password(length):
@@ -28,23 +40,8 @@ def run_password_generator(size):
         else:
             strength = "[green dim]STRONG (Excellent)[/]"
 
-        print(f"\nYour Password: [underline bold bright_white]{pwd}[/]")
-        print(f"Strength: {strength}\n")
-
-
-def main():
-    if (len(sys.argv) > 1):
-        password_length_arg: int = int(sys.argv[1])
-        cli_password_generator(password_length_arg)
-        return
-
-    print("---Secure Password Generator---")
-    try:
-        size = int(input("Enter password length:"))
-        run_password_generator(size)
-    except ValueError:
-        print("Error:Please enter a whole number.")
-
-
-if __name__ == "__main__":
-    main()
+        table.add_row(
+            strength,
+            pwd
+        )
+        console.print(table)
