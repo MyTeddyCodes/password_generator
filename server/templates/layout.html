@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html class="dark" lang="en">
+<head>
+    <meta charset="utf-8"/>
+    <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+    <title>{% block title %}Teddy's Password Generator{% endblock %}</title>
+    
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+
+    <!-- CSS -->
+    <link href="/static/css/style.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;900&amp;family=JetBrains+Mono:wght@500&amp;display=swap" rel="stylesheet"/>
+    
+     <script id="tailwind-config">
+     tailwind.config = {
+       darkMode: "class",
+       theme: {
+         extend: {
+           colors: {
+             "primary": "#137fec",
+             "background-light": "#f6f7f8",
+             "background-dark": "#101922",
+           },
+           fontFamily: {
+             "display": ["Inter", "sans-serif"],
+             "mono": ["JetBrains Mono", "monospace"]
+           },
+           borderRadius: {
+             "DEFAULT": "0.25rem",
+             "lg": "0.5rem",
+             "xl": "0.75rem",
+             "full": "9999px"
+           },
+         },
+       },
+     }
+     </script>
+    {% block styles %}
+    <!-- Page specific styles -->
+    {% endblock %}
+    
+    {% block head_scripts %}
+    <!-- Scripts that need to load early -->
+    {% endblock %}
+
+    {% block added_scripts %}
+    <!-- Scripts that need to load early -->
+    {% endblock %}
+
+</head>
+<body>
+    {% include "components/header.html" %}
+    
+    {% block breadcrumbs %}
+    <!-- Breadcrumb navigation -->
+    {% endblock %}
+    
+    <div class="page-wrapper">
+        <main class="main-content">
+            {% block content %}
+            <!-- Main page content -->
+            {% endblock %}
+        </main>
+    </div>
+    
+    <!-- Core scripts -->
+    <script src="/static/js/main.js"></script>
+    
+    {% block scripts %}
+    <!-- Page specific scripts -->
+    {% endblock %}
+</body>
+</html>

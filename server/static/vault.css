@@ -1,0 +1,7 @@
+body {
+  font-family: 'Inter', sans-serif;
+}
+.sidebar-item-active {
+  background-color: rgba(19, 127, 236, 0.1);
+  color: #137fec;
+}

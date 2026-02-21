@@ -1,41 +1,11 @@
+{% extends "layout.html" %}
 
-<!DOCTYPE html>
-<html class="dark" lang="en">
-   <head>
-      <meta charset="utf-8"/>
-      <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
-      <title>Teddy's Password Generator</title>
-      <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
-      <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;900&amp;family=JetBrains+Mono:wght@500&amp;display=swap" rel="stylesheet"/>
-      <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
-      <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
-      <link rel="stylesheet" href="../static/generator.css">
-      <script id="tailwind-config">
-         tailwind.config = {
-             darkMode: "class",
-             theme: {
-                 extend: {
-                     colors: {
-                         "primary": "#137fec",
-                         "background-light": "#f6f7f8",
-                         "background-dark": "#101922",
-                     },
-                     fontFamily: {
-                         "display": ["Inter", "sans-serif"],
-                         "mono": ["JetBrains Mono", "monospace"]
-                     },
-                     borderRadius: {
-                         "DEFAULT": "0.25rem",
-                         "lg": "0.5rem",
-                         "xl": "0.75rem",
-                         "full": "9999px"
-                     },
-                 },
-             },
-         }
-      </script>
-   </head>
-   <body class="bg-background-light dark:bg-background-dark font-display text-slate-900 dark:text-slate-100 min-h-screen flex flex-col">
+     {% block styles %}
+     <link rel="stylesheet" href="../static/generator.css">
+     {% endblock%}
+
+{% block content%}
+   <div class="bg-background-light dark:bg-background-dark font-display text-slate-900 dark:text-slate-100 min-h-screen flex flex-col">
       <!-- Top Navigation Bar -->
       <header class="border-b border-slate-200 dark:border-slate-800 bg-white/50 dark:bg-background-dark/50 backdrop-blur-md sticky top-0 z-50">
          <div class="max-w-5xl mx-auto px-6 h-16 flex items-center justify-between">
@@ -178,5 +148,5 @@
             </div>
          </div>
       </footer>
-   </body>
-</html>
+   </div>
+{%endblock%}
