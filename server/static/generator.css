@@ -1,0 +1,19 @@
+
+.custom-range::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 18px;
+    height: 18px;
+    background: #137fec;
+    cursor: pointer;
+    border-radius: 50%;
+    border: 2px solid #101922;
+}
+.custom-range::-moz-range-thumb {
+    width: 18px;
+    height: 18px;
+    background: #137fec;
+    cursor: pointer;
+    border-radius: 50%;
+    border: 2px solid #101922;
+}
