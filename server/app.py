@@ -1,4 +1,5 @@
 import base64
+from datetime import datetime, timedelta
 import hashlib
 from cryptography.hazmat.primitives import hashes
 from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
@@ -7,9 +8,9 @@ from fastapi import FastAPI, Request, Form
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from fastapi.responses import HTMLResponse, RedirectResponse
-from sqlalchemy import create_engine, Column, Integer, String, Text
+from sqlalchemy import create_engine, Column, Integer, String, Text, ForeignKey, LargeBinary, CheckConstraint
 from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import sessionmaker, Session
+from sqlalchemy.orm import sessionmaker, Session, relationship
 from typing import Optional
 import secrets
 
@@ -32,10 +33,8 @@ active_session = {}
 """ Encryption with Fernet"""
 
 
-def derive_key(master_password: str, salt: bytes = None):
+def derive_key(master_password: str, salt: bytes):
 
-    if salt is None:
-        salt = secrets.token_bytes(16)
     kdf = PBKDF2HMAC(
         algorithm=hashes.SHA256(),
         length=32,
@@ -44,7 +43,7 @@ def derive_key(master_password: str, salt: bytes = None):
     )
 
     key = base64.urlsafe_b64encode(kdf.derive(master_password.encode()))
-    return key, salt
+    return key
 
 
 def encrypt_with_master(data: str, master_password: str) -> str:
@@ -68,18 +67,29 @@ class Password(Base):
     __tablename__ = "passwords"
 
     id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey(
+        "users.id", ondelete="CASCADE"), nullable=False)
     login = Column(String, index=True)
     username = Column(String)
     password = Column(String)
+
+    owner = relationship("User", back_populates="passwords")
 
 
 class User(Base):
     __tablename__ = "users"
 
-    id = Column(Integer, primary_key=True)
-    email = Column(String, unique=True)
-    salt = Column(Text)  # 👈 SALT IS STORED HERE (not secret!)
+    id = Column(Integer, primary_key=True, default=1)
+    # The CheckConstraint ensures the id can ONLY be 1
+    __table_args__ = (
+        CheckConstraint(id == 1, name='only_one_row'),
+    )
+    # email = Column(String, unique=True)
+    salt = Column(LargeBinary)  # 👈 SALT IS STORED HERE (not secret!)
     password_hash = Column(String)  # For authentication
+
+    passwords = relationship(
+        "Password", back_populates="owner", cascade="all, delete-orphan")
 
 
 # Create the database tables
@@ -94,8 +104,27 @@ def get_db():
         db.close()
 
 
+def create_session(user_id: int, master_password: str) -> str:
+    """Create a new session for user"""
+    session_token = secrets.token_urlsafe(32)
+    active_session[session_token] = {
+        "user_id": user_id,
+        "master_password": master_password,  # ONLY in memory!
+        "created_at": datetime.now()
+    }
+    return session_token
+
+
+def verify_password(password: str, salt: bytes, stored_hash: bytes) -> bool:
+    """Verify password against stored hash"""
+    key = derive_key(password, salt).hex()
+    return key == stored_hash
+
+
 @app.get("/", response_class=HTMLResponse)
 async def get_vault(request: Request):
+    # TODO: Check if a user already exist seeing that the application is designed
+    # for one user, and redirect user to login_form to sign in
     return templates.TemplateResponse("index.html",
                                       {"request": request, "items": "test"})
 
@@ -112,16 +141,71 @@ async def register_form(request: Request):
                                       {"request": request})
 
 
+@app.get("/login_form", response_class=HTMLResponse)
+async def login_form(request: Request):
+    return templates.TemplateResponse("login.html",
+                                      {"request": request})
+
+
 @app.post("/register")
 async def register(
     master_password: str = Form(...),
 ):
-    key, salt = derive_key(master_password)
+    salt = secrets.token_bytes(16)
+    key = derive_key(master_password, salt).hex()
 
     db = SessionLocal()
-    new_user = User
+
+    new_user = User(
+        salt=salt,
+        password_hash=key
+    )
+
+    db.add(new_user)
+    db.commit()
+    db.close()
+
+    return RedirectResponse(url="/login_form", status_code=303)
 
     """DATABASE APIs"""
+
+
+@app.post("/login")
+async def login(
+    request: Request,
+    master_password: str = Form(...),
+):
+    db = SessionLocal()
+
+    user = db.query(User).first()
+
+    if not verify_password(master_password, user.salt, user.password_hash):
+        db.close()
+        return templates.TemplateResponse(
+            "login.html",
+            {
+                "request": request,
+                "error": "Invalid master password"
+            },
+            status_code=400
+        )
+    db.close()
+
+    # Create session
+    session_token = create_session(user.id, master_password)
+
+    # Set cookie and redirect
+    response = RedirectResponse(url="/", status_code=303)
+    response.set_cookie(
+        key="session_token",
+        value=session_token,
+        httponly=True,  # Can't access via JavaScript
+        secure=False,   # Set to True in production with HTTPS
+        max_age=3600,   # 1 hour
+        samesite="lax"
+    )
+
+    return response
 
 
 @app.post("/add")
@@ -153,13 +237,12 @@ async def delete_password(password_id: int):
     password = db.query(Password).filter(Password.id == password_id).first()
     if password:
         db.delete(password)
-    db.commit()
-    db.close()
+        db.commit()
+        db.close()
 
-    return RedirectResponse(url="/", status_code=303)
+        return RedirectResponse(url="/", status_code=303)
 
-
-""" Generate Password from server """
+    """ Generate Password from server """
 
 
 @app.post("/generate_password")
