@@ -1,18 +1,24 @@
 import base64
 from datetime import datetime, timedelta
+from functools import wraps
 import hashlib
 from cryptography.hazmat.primitives import hashes
 from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
 from cryptography.fernet import Fernet
-from fastapi import FastAPI, Request, Form
+from fastapi import FastAPI, Request, Form, HTTPException
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from fastapi.responses import HTMLResponse, RedirectResponse
+import os
 from sqlalchemy import create_engine, Column, Integer, String, Text, ForeignKey, LargeBinary, CheckConstraint
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker, Session, relationship
+import sys
 from typing import Optional
 import secrets
+sys.path.append(os.path.abspath(os.path.join(
+    os.path.dirname(__file__), '..', 'src')))
+
 
 # FAST API
 app = FastAPI()
@@ -115,6 +121,53 @@ def create_session(user_id: int, master_password: str) -> str:
     return session_token
 
 
+def get_current_session(request: Request):
+    """Get the current session if valid"""
+    session_token = request.cookies.get("session_token")
+    if not session_token:
+        return None
+
+    session = active_session.get(session_token)
+    if not session:
+        return None
+
+    # Check if session expired (optional)
+    if datetime.now() - session["created_at"] > timedelta(hours=1):
+        del active_session[session_token]
+        return None
+
+    return session
+
+
+def login_required(api_route=False):
+    """Decorator to require Login"""
+
+    def decorator(func):
+        @wraps(func)
+        async def wrapper(request: Request, *args, **kwargs):
+            # Check if user has active session
+            session = get_current_session(request)
+
+            if not session:
+                # No active session - block access
+                if api_route:
+                    # API route
+                    raise HTTPException(
+                        status_code=401, detail="Please login first")
+                else:
+                    # HTML route
+                    return RedirectResponse(url="/login_form", status_code=303)
+
+            # Add session to kwargs and call the function
+            import inspect
+            if 'session' in inspect.signature(func).parameters:
+                return await func(request, *args, **kwargs, session=session)
+            else:
+                return await func(request, *args, **kwargs)
+        return wrapper
+    return decorator
+
+
 def verify_password(password: str, salt: bytes, stored_hash: bytes) -> bool:
     """Verify password against stored hash"""
     key = derive_key(password, salt).hex()
@@ -123,13 +176,17 @@ def verify_password(password: str, salt: bytes, stored_hash: bytes) -> bool:
 
 @app.get("/", response_class=HTMLResponse)
 async def get_vault(request: Request):
-    # TODO: Check if a user already exist seeing that the application is designed
-    # for one user, and redirect user to login_form to sign in
+    from password_gen import create_password, verify_password_strength
+    password: str = create_password(20)
+    strength: str = verify_password_strength(password)
     return templates.TemplateResponse("index.html",
-                                      {"request": request, "items": "test"})
+                                      {"request": request,
+                                       "password": password,
+                                       "strength": strength})
 
 
 @app.get("/vault", response_class=HTMLResponse)
+@login_required()
 async def save_password(request: Request):
     return templates.TemplateResponse("vault.html",
                                       {"request": request})
@@ -137,6 +194,14 @@ async def save_password(request: Request):
 
 @app.get("/register_form", response_class=HTMLResponse)
 async def register_form(request: Request):
+    # Check if a user already exist seeing that the application is designed
+    # for one user, and redirect user to login_form to sign in
+    db = SessionLocal()
+    user = db.query(User).first()
+
+    if user:
+        return RedirectResponse(url="/login_form", status_code=303)
+
     return templates.TemplateResponse("register.html",
                                       {"request": request})
 
@@ -208,7 +273,20 @@ async def login(
     return response
 
 
+@app.get("/logout")
+async def logout(request: Request):
+    """Logout - remove session"""
+    session_token = request.cookies.get("session_token")
+    if session_token and session_token in active_session:
+        del active_session[session_token]
+
+    response = RedirectResponse(url="/login_form", status_code=303)
+    response.delete_cookie("session_token")
+    return response
+
+
 @app.post("/add")
+@login_required(api_route=True)
 async def add_password(
     login: str = Form(...),
     username: str = Form(...),
@@ -231,6 +309,7 @@ async def add_password(
 
 
 @app.post("/delete/{password_id}")
+@login_required(api_route=True)
 async def delete_password(password_id: int):
 
     db = SessionLocal()
@@ -246,5 +325,11 @@ async def delete_password(password_id: int):
 
 
 @app.post("/generate_password")
-async def generate_password():
+async def generate_password(
+    uppercase: bool = Form(...),
+    numbers: bool = Form(...),
+    symbols: bool = Form(...),
+
+    length: bool = Form(...),
+):
     pass

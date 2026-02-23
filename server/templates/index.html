@@ -45,7 +45,7 @@
                <div class="flex flex-col items-center gap-6">
                   <div class="w-full relative group">
                      <div class="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 py-6 px-8 rounded-xl flex items-center justify-between">
-                        <span class="font-mono text-2xl md:text-3xl tracking-wider text-primary break-all select-all">k&amp;7P#vW9t!mQ2xZ@</span>
+                       <span class="font-mono text-2xl md:text-3xl tracking-wider text-primary break-all select-all">{{ password }}</span>
                         <div class="flex items-center gap-2">
                            <button class="p-2 hover:bg-slate-200 dark:hover:bg-slate-800 rounded-lg text-slate-500 transition-colors" title="Regenerate">
                            <span class="material-symbols-outlined">refresh</span>
@@ -60,8 +60,20 @@
                   <!-- Strength Indicator -->
                   <div class="w-full space-y-3">
                      <div class="flex justify-between items-center px-1">
-                        <span class="text-sm font-medium text-slate-500 dark:text-slate-400">Password Strength: <span class="text-emerald-500 font-bold">Strong</span></span>
-                        <span class="text-sm font-bold text-emerald-500">85%</span>
+
+                       {% if "strong" in strength.lower() %}
+                       <span class="text-sm font-medium text-slate-500 dark:text-slate-400">Password Strength: <span class="text-emerald-500 font-bold">{{ strength }}</span></span>
+                       <span class="text-sm font-bold text-emerald-500">85%</span>
+
+                       {% elif "medium" in strength.lower() %}
+                       <span class="text-sm font-medium text-slate-500 dark:text-slate-400">Password Strength: <span class="text-amber-500 font-bold">{{ strength }}</span></span>
+                       <span class="text-sm font-bold text-amber-500">50%</span>
+
+                       {% elif "weak" in strength.lower() %}
+                       <span class="text-sm font-medium text-slate-500 dark:text-slate-400">Password Strength: <span class="text-red-500 font-bold">{{ strength }}</span></span>
+                       <span class="text-sm font-bold text-red-500">30%</span>
+                       {% endif %}
+
                      </div>
                      <div class="h-2 w-full bg-slate-200 dark:bg-slate-800 rounded-full overflow-hidden">
                         <div class="h-full bg-emerald-500 transition-all duration-500" style="width: 85%;"></div>
@@ -78,7 +90,7 @@
                      <label class="text-sm font-bold uppercase tracking-widest text-slate-500">Length</label>
                      <span class="bg-primary/10 text-primary text-lg font-bold px-3 py-1 rounded-lg border border-primary/20">16</span>
                   </div>
-                  <input class="w-full h-1.5 bg-slate-200 dark:bg-slate-800 rounded-lg appearance-none cursor-pointer custom-range" max="64" min="4" type="range" value="16"/>
+                  <input id="length-slider" class="w-full h-1.5 bg-slate-200 dark:bg-slate-800 rounded-lg appearance-none cursor-pointer custom-range" max="64" min="4" type="range" value="16" step="1"/>
                   <div class="flex justify-between text-[10px] font-bold text-slate-400 uppercase tracking-tighter">
                      <span>4</span>
                      <span>16</span>
@@ -99,9 +111,14 @@
                      </div>
                      <div class="flex items-center justify-between">
                         <span class="text-sm font-medium">Lowercase (a-z)</span>
-                        <button class="w-10 h-5 bg-primary rounded-full relative transition-colors">
-                        <span class="absolute right-1 top-1 bg-white w-3 h-3 rounded-full"></span>
-                        </button>
+                        <label class="switch">
+                          <input id="lowercase" type="checkbox" class="w-10 h-5 bg-primary rounded-full relative transition-colors">
+                          <span class="slider round absolute right-1 top-1 bg-white w-3 h-3 rounded-full"></span>
+                        </label>
+                        <label class="switch">
+                          <input type="checkbox" checked>
+                          <span class="slider round"></span>
+                        </label>
                      </div>
                      <div class="flex items-center justify-between">
                         <span class="text-sm font-medium">Numbers (0-9)</span>
@@ -150,3 +167,7 @@
       </footer>
    </div>
 {%endblock%}
+
+{% block scripts %}
+    <script src="../static/js/generator.js"></script>
+{% endblock %}
