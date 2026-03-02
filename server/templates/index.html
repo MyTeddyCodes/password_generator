@@ -1,7 +1,7 @@
 {% extends "layout.html" %}
 
      {% block styles %}
-     <link rel="stylesheet" href="../static/generator.css">
+     <link rel="stylesheet" href="../static/css/generator.css">
      {% endblock%}
 
 {% block content%}
@@ -45,10 +45,10 @@
                <div class="flex flex-col items-center gap-6">
                   <div class="w-full relative group">
                      <div class="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 py-6 px-8 rounded-xl flex items-center justify-between">
-                       <span class="font-mono text-2xl md:text-3xl tracking-wider text-primary break-all select-all">{{ password }}</span>
+                       <span class="font-mono text-2xl md:text-3xl tracking-wider text-primary break-all select-all" id="password_display">{{ password }}</span>
                         <div class="flex items-center gap-2">
-                           <button class="p-2 hover:bg-slate-200 dark:hover:bg-slate-800 rounded-lg text-slate-500 transition-colors" title="Regenerate">
-                           <span class="material-symbols-outlined">refresh</span>
+                           <button id="refresh_button" class="p-2 hover:bg-slate-200 dark:hover:bg-slate-800 rounded-lg text-slate-500 transition-colors" title="Regenerate">
+                            <span class="material-symbols-outlined">refresh</span>
                            </button>
                            <button class="p-2 bg-primary hover:bg-primary/90 text-white rounded-lg transition-all flex items-center gap-2 px-4 shadow-lg shadow-primary/20" title="Copy to clipboard">
                            <span class="material-symbols-outlined text-[20px]">content_copy</span>
@@ -88,9 +88,9 @@
                <div class="bg-white dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800 rounded-xl p-6 space-y-6">
                   <div class="flex justify-between items-center">
                      <label class="text-sm font-bold uppercase tracking-widest text-slate-500">Length</label>
-                     <span class="bg-primary/10 text-primary text-lg font-bold px-3 py-1 rounded-lg border border-primary/20">16</span>
+                     <span id="slider_num_value" class="bg-primary/10 text-primary text-lg font-bold px-3 py-1 rounded-lg border border-primary/20">-</span>
                   </div>
-                  <input id="length-slider" class="w-full h-1.5 bg-slate-200 dark:bg-slate-800 rounded-lg appearance-none cursor-pointer custom-range" max="64" min="4" type="range" value="16" step="1"/>
+                  <input id="length-slider" class="w-full h-1.5 bg-slate-200 dark:bg-slate-800 rounded-lg appearance-none cursor-pointer custom-range" max="64" min="4" type="range" step="1"/>
                   <div class="flex justify-between text-[10px] font-bold text-slate-400 uppercase tracking-tighter">
                      <span>4</span>
                      <span>16</span>
@@ -105,32 +105,45 @@
                   <div class="space-y-4">
                      <div class="flex items-center justify-between">
                         <span class="text-sm font-medium">Uppercase (A-Z)</span>
-                        <button class="w-10 h-5 bg-primary rounded-full relative transition-colors">
-                        <span class="absolute right-1 top-1 bg-white w-3 h-3 rounded-full"></span>
-                        </button>
-                     </div>
-                     <div class="flex items-center justify-between">
-                        <span class="text-sm font-medium">Lowercase (a-z)</span>
+                        <!-- <button class="w-10 h-5 bg-primary rounded-full relative transition-colors"> -->
+                        <!-- <span class="absolute right-1 top-1 bg-white w-3 h-3 rounded-full"></span> -->
+                        <!-- </button> -->
                         <label class="switch">
-                          <input id="lowercase" type="checkbox" class="w-10 h-5 bg-primary rounded-full relative transition-colors">
-                          <span class="slider round absolute right-1 top-1 bg-white w-3 h-3 rounded-full"></span>
+                          <input id="uppercase" type="checkbox" checked>
+                          <span class="slider round"></span>
                         </label>
+                     </div>
+                     <!-- lowercase not needed set by default  -->
+                     <!-- <div class="flex items-center justify-between"> -->
+                     <!--    <span class="text-sm font-medium">Lowercase (a-z)</span> -->
+                     <!--    <label class="switch"> -->
+                     <!--      <input id="lowercase" type="checkbox" class="w-10 h-5 bg-primary rounded-full relative transition-colors"> -->
+                     <!--      <span class="slider round absolute right-1 top-1 bg-white w-3 h-3 rounded-full"></span> -->
+                     <!--    </label> -->
+                     <!--    <label class="switch"> -->
+                     <!--      <input id="lowercase" type="checkbox" checked> -->
+                     <!--      <span class="slider round"></span> -->
+                     <!--    </label> -->
+                     <!-- </div> -->
+                     <div class="flex items-center justify-between">
+                        <span class="text-sm font-medium">Numbers (0-9)</span>
+                        <!-- <button class="w-10 h-5 bg-primary rounded-full relative transition-colors"> -->
+                        <!-- <span class="absolute right-1 top-1 bg-white w-3 h-3 rounded-full"></span> -->
+                        <!-- </button> -->
                         <label class="switch">
-                          <input type="checkbox" checked>
+                          <input id="numbers" type="checkbox" checked>
                           <span class="slider round"></span>
                         </label>
                      </div>
                      <div class="flex items-center justify-between">
-                        <span class="text-sm font-medium">Numbers (0-9)</span>
-                        <button class="w-10 h-5 bg-primary rounded-full relative transition-colors">
-                        <span class="absolute right-1 top-1 bg-white w-3 h-3 rounded-full"></span>
-                        </button>
-                     </div>
-                     <div class="flex items-center justify-between">
                         <span class="text-sm font-medium">Symbols (!@#$)</span>
-                        <button class="w-10 h-5 bg-primary rounded-full relative transition-colors">
-                        <span class="absolute right-1 top-1 bg-white w-3 h-3 rounded-full"></span>
-                        </button>
+                        <!-- <button class="w-10 h-5 bg-primary rounded-full relative transition-colors"> -->
+                        <!-- <span class="absolute right-1 top-1 bg-white w-3 h-3 rounded-full"></span> -->
+                        <!-- </button> -->
+                        <label class="switch">
+                          <input id="symbols" type="checkbox" checked>
+                          <span class="slider round"></span>
+                        </label>
                      </div>
                   </div>
                </div>
@@ -144,7 +157,7 @@
                <div class="flex items-center gap-4 text-xs font-medium text-slate-500">
                   <div class="flex items-center gap-1.5 bg-emerald-500/10 text-emerald-500 px-3 py-1.5 rounded-full border border-emerald-500/20">
                      <span class="material-symbols-outlined text-[14px] fill-1">verified_user</span>
-                     Security Verified
+                     Security
                   </div>
                   <div class="flex items-center gap-1.5 bg-slate-100 dark:bg-slate-800 px-3 py-1.5 rounded-full border border-slate-200 dark:border-slate-700">
                      <span class="material-symbols-outlined text-[14px]">history</span>

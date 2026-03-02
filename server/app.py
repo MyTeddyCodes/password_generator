@@ -16,6 +16,10 @@ from sqlalchemy.orm import sessionmaker, Session, relationship
 import sys
 from typing import Optional
 import secrets
+
+from pydantic import BaseModel
+
+
 sys.path.append(os.path.abspath(os.path.join(
     os.path.dirname(__file__), '..', 'src')))
 
@@ -179,10 +183,14 @@ async def get_vault(request: Request):
     from password_gen import create_password, verify_password_strength
     password: str = create_password(20)
     strength: str = verify_password_strength(password)
+    default_password_length: int = 16
     return templates.TemplateResponse("index.html",
                                       {"request": request,
                                        "password": password,
-                                       "strength": strength})
+                                       "strength": strength,
+                                       "default_password_length": default_password_length,
+                                       "": "test"
+                                       })
 
 
 @app.get("/vault", response_class=HTMLResponse)
@@ -324,12 +332,28 @@ async def delete_password(password_id: int):
     """ Generate Password from server """
 
 
-@app.post("/generate_password")
-async def generate_password(
-    uppercase: bool = Form(...),
-    numbers: bool = Form(...),
-    symbols: bool = Form(...),
+class PasswordSettings(BaseModel):
+    password_length: int
+    uppercase: bool
+    numbers: bool
+    symbols: bool
 
-    length: bool = Form(...),
-):
-    pass
+
+@app.post("/generate_password")
+async def generate_password(settings: PasswordSettings):
+
+    from password_gen import create_password, verify_password_strength
+
+    password: str = create_password(
+        settings.password_length,
+        settings.uppercase,
+        settings.numbers,
+        settings.symbols
+    )
+    strength: str = verify_password_strength(password)
+
+    return {
+        "status": "success",
+        "generated_password": password,
+        "strength": strength
+    }
