@@ -10,11 +10,11 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from fastapi.responses import HTMLResponse, RedirectResponse
 import os
+from typing import Annotated
 from sqlalchemy import create_engine, Column, Integer, String, Text, ForeignKey, LargeBinary, CheckConstraint
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker, Session, relationship
 import sys
-from typing import Optional
 import secrets
 
 from pydantic import BaseModel
@@ -56,16 +56,16 @@ def derive_key(master_password: str, salt: bytes):
     return key
 
 
-def encrypt_with_master(data: str, master_password: str) -> str:
+def encrypt_with_master(data: str, master_password: str, salt: bytes) -> str:
     """Encrypt data using master password"""
-    key = derive_key(master_password)
+    key = derive_key(master_password, salt)
     f = Fernet(key)
     return f.encrypt(data.encode()).decode()
 
 
-def decrypt_with_master(encrypted_data: str, master_password: str) -> str:
+def decrypt_with_master(encrypted_data: str, master_password: str, salt: bytes) -> str:
     """Decrypt data using master password"""
-    key = derive_key(master_password)
+    key = derive_key(master_password, salt)
     f = Fernet(key)
     return f.decrypt(encrypted_data.encode()).decode()
 
@@ -122,6 +122,7 @@ def create_session(user_id: int, master_password: str) -> str:
         "master_password": master_password,  # ONLY in memory!
         "created_at": datetime.now()
     }
+    print(active_session)
     return session_token
 
 
@@ -129,16 +130,27 @@ def get_current_session(request: Request):
     """Get the current session if valid"""
     session_token = request.cookies.get("session_token")
     if not session_token:
+        print("No Session_Token")
         return None
 
     session = active_session.get(session_token)
+    print(f'active session: = > {active_session}')
     if not session:
+        print("No active session")
         return None
+    else:
+        print(f'time, {datetime.now() - session["created_at"]}')
 
     # Check if session expired (optional)
-    if datetime.now() - session["created_at"] > timedelta(hours=1):
+    if (datetime.now() - session["created_at"]) > timedelta(hours=2):
+        print(f'\ntime before delete, {
+              datetime.now() - session["created_at"]}')
         del active_session[session_token]
+
+        print("Session expired")
         return None
+
+    session["created_at"] = datetime.now()
 
     return session
 
@@ -148,8 +160,13 @@ def login_required(api_route=False):
 
     def decorator(func):
         @wraps(func)
-        async def wrapper(request: Request, *args, **kwargs):
+        async def wrapper(*args, **kwargs):
             # Check if user has active session
+            request: Request = kwargs.get("request")
+            if not request:
+                raise RuntimeError(
+                    "Route must include 'request: Request' to use login_required")
+
             session = get_current_session(request)
 
             if not session:
@@ -164,10 +181,12 @@ def login_required(api_route=False):
 
             # Add session to kwargs and call the function
             import inspect
-            if 'session' in inspect.signature(func).parameters:
-                return await func(request, *args, **kwargs, session=session)
-            else:
-                return await func(request, *args, **kwargs)
+            sig = inspect.signature(func)
+            if 'session' in sig.parameters:
+                kwargs['session'] = session
+
+            # ONLY pass kwargs. Do not pass 'request' or '*args' separately.
+            return await func(**kwargs)
         return wrapper
     return decorator
 
@@ -180,17 +199,24 @@ def verify_password(password: str, salt: bytes, stored_hash: bytes) -> bool:
 
 @app.get("/", response_class=HTMLResponse)
 async def get_vault(request: Request):
-    from password_gen import create_password, verify_password_strength
-    password: str = create_password(20)
-    strength: str = verify_password_strength(password)
-    default_password_length: int = 16
     return templates.TemplateResponse("index.html",
-                                      {"request": request,
-                                       "password": password,
-                                       "strength": strength,
-                                       "default_password_length": default_password_length,
-                                       "": "test"
-                                       })
+                                      {"request": request})
+
+
+@app.get("/api/password_default_data")
+async def get_password_data():
+    from password_gen import create_password, verify_password_strength, get_password_strength_percent
+    password: str = create_password(12)
+    strength: str = verify_password_strength(password)
+    strength_value: int = get_password_strength_percent(password)
+    default_password_length: int = 16
+
+    return {
+        "password": password,
+        "strength": strength,
+        "default_password_length": default_password_length,
+        "strength_value": strength_value
+    }
 
 
 @app.get("/vault", response_class=HTMLResponse)
@@ -293,31 +319,102 @@ async def logout(request: Request):
     return response
 
 
-@app.post("/add")
+@app.get("/api/retreive_password")
+@login_required(api_route=True)
+async def retrieve_password(request: Request):
+    db = SessionLocal()
+
+    session_token = request.cookies.get("session_token")
+    master_password = active_session.get(session_token)["master_password"]
+
+    user = db.query(User).first()
+
+    try:
+        password_list = db.query(Password).all()
+
+        if not password_list:
+            return {"message": "no passwords in database"}
+
+        decrypted_data = []
+        for p in password_list:
+            try:
+                decrypted_data.append({
+                    "id": p.id,
+                    "login": decrypt_with_master(
+                        p.login,
+                        master_password,
+                        user.salt
+                    ),
+                    "username": decrypt_with_master(
+                        p.username,
+                        master_password,
+                        user.salt
+                    ),
+                    "password": decrypt_with_master(
+                        p.password,
+                        master_password,
+                        user.salt
+                    ),
+                })
+                return {"password_data": decrypted_data}
+
+            except Exception:
+                print("unable to decrypt")
+
+    finally:
+        db.close()
+
+
+class SavePassword(BaseModel):
+    password: str
+    account_name: str
+    my_username: str
+
+
+@app.post("/add_password")
 @login_required(api_route=True)
 async def add_password(
-    login: str = Form(...),
-    username: str = Form(...),
-    password: str = Form(...),
+        new_login: Annotated[SavePassword, Form()],
+        request: Request
 ):
     # Save new password to database
     db = SessionLocal()
+    user = db.query(User).first()
+
+    session_token = request.cookies.get("session_token")
+    master_password = active_session.get(session_token)["master_password"]
 
     new_password = Password(
-        login=login,
-        username=username,
+        user_id=user.id,
+        login=encrypt_with_master(
+            new_login.account_name,
+            master_password,
+            user.salt
+        ),
+        username=encrypt_with_master(
+            new_login.my_username,
+            master_password,
+            user.salt
+        ),
         # TODO: encrypt the password
-        password=password
+        password=encrypt_with_master(
+            new_login.password,
+            master_password,
+            user.salt
+        )
     )
+
+    print(new_login)
+
     db.add(new_password)
     db.commit()
     db.close()
 
-    return RedirectResponse(url="/", status_code=303)
+    return RedirectResponse(url="/vault", status_code=303)
 
 
-@app.post("/delete/{password_id}")
-@login_required(api_route=True)
+@ app.post("/delete/{password_id}")
+@ login_required(api_route=True)
 async def delete_password(password_id: int):
 
     db = SessionLocal()
@@ -339,10 +436,10 @@ class PasswordSettings(BaseModel):
     symbols: bool
 
 
-@app.post("/generate_password")
+@ app.post("/generate_password")
 async def generate_password(settings: PasswordSettings):
 
-    from password_gen import create_password, verify_password_strength
+    from password_gen import create_password, verify_password_strength, get_password_strength_percent
 
     password: str = create_password(
         settings.password_length,
@@ -351,9 +448,11 @@ async def generate_password(settings: PasswordSettings):
         settings.symbols
     )
     strength: str = verify_password_strength(password)
+    strength_value: int = get_password_strength_percent(password)
 
     return {
         "status": "success",
         "generated_password": password,
-        "strength": strength
+        "strength": strength,
+        "strength_value": strength_value
     }

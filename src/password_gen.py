@@ -3,6 +3,7 @@ from rich.console import Console
 from rich.table import Table
 import string
 import secrets
+from zxcvbn import zxcvbn
 
 console = Console()
 
@@ -72,16 +73,30 @@ def cli_password_generator(length: int) -> None:
 
 def verify_password_strength(password: str) -> str:
 
-    size: int = len(password)
-
-    if size < 8:
+    score: int = get_password_strength_percent(password)
+    if score < 50:
         strength = "WEAK (Low Security)"
-    elif size <= 12:
+    elif score <= 75:
         strength = "MEDIUM (Good)"
     else:
         strength = "STRONG (Excellent)"
 
     return strength
+
+
+def get_password_strength_percent(password) -> int:
+    results = zxcvbn(password)
+    score = results['score']  # 0, 1, 2, 3, or 4
+
+    # Map the 0-4 score to a 0-100 percentage
+    strength_map = {
+        0: 0,   # Too guessable
+        1: 25,  # Very guessable
+        2: 50,  # Somewhat guessable
+        3: 75,  # Safely unguessable
+        4: 100  # Very unguessable
+    }
+    return strength_map[score]
 
 
 def print_password_table(password: str, strength: str) -> None:

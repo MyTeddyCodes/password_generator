@@ -5,3 +5,4 @@ sqlalchemy
 jinja2
 cryptography
 python-multipart
+zxcvbn
