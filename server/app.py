@@ -331,13 +331,15 @@ async def retrieve_password(request: Request):
 
     try:
         password_list = db.query(Password).all()
+        for p in password_list:
+            print(p)
 
         if not password_list:
             return {"message": "no passwords in database"}
 
         decrypted_data = []
-        for p in password_list:
-            try:
+        try:
+            for p in password_list:
                 decrypted_data.append({
                     "id": p.id,
                     "login": decrypt_with_master(
@@ -356,13 +358,14 @@ async def retrieve_password(request: Request):
                         user.salt
                     ),
                 })
-                return {"password_data": decrypted_data}
 
-            except Exception:
-                print("unable to decrypt")
+        except Exception:
+            print("unable to decrypt")
 
     finally:
         db.close()
+
+    return {"password_data": decrypted_data}
 
 
 class SavePassword(BaseModel):

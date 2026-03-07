@@ -1,0 +1,28 @@
+
+<div id="passwordListContainer" class="bg-white dark:bg-background-dark border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden divide-y divide-slate-100 dark:divide-slate-800/50">
+    <!-- Entry 1 -->
+  
+</div>
+
+<template id="passwordItemTemplate">
+ <div class="p-4 hover:bg-slate-50 dark:hover:bg-slate-800/30 transition-colors flex items-center group">
+    <div class="w-10 h-10 rounded-lg bg-slate-100 dark:bg-slate-800 flex items-center justify-center mr-4">
+      <img alt="Google Logo" class="w-6 h-6 object-contain" data-alt="Official Google icon logo" src="https://lh3.googleusercontent.com/aida-public/AB6AXuC_zOoJDsAM6O3dnpH_Nl-BJC_ARYm7UIBZFeDtDGT8yrFiB48pVqOaW-h-UqvXrjO_qW0RvOwL0Y4ORtUgmzk3JfgUt-eD6_Gy2jCZlXZELf7mecOTJZRut-zPTmb4nvdc9tVtUvE4rrb7wciquiPkFmjGCjoMgxuaHDNAaDkamkNdAYSRcYstRVyN0xAI1VKRyoDaxmYHTEW0CEUyiOlTB5zfjRA7JURKP4U4fCV2nq7SOtNRNHU5EOKukUJ3Iq3AnyYR-4D5bDk"/>
+    </div>
+    <div class="flex-1 min-w-0 pr-4">
+      <h3 id="accountName" class="text-sm font-bold truncate"></h3>
+      <p id="username" class="text-xs text-slate-500 dark:text-slate-400 truncate"></p>
+    </div>
+    <div class="hidden md:flex flex-1 items-center gap-2">
+      <code id="password" class="bg-slate-100 dark:bg-slate-800 px-3 py-1 rounded text-sm text-slate-400 font-mono tracking-widest">• • • • • • • •</code>
+      <button class="material-symbols-outlined text-slate-400 hover:text-primary transition-colors text-lg">visibility</button>
+    </div>
+    <div class="flex items-center gap-2">
+      <button class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 text-xs font-bold hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors">
+        <span class="material-symbols-outlined text-sm">content_copy</span>
+        Copy
+      </button>
+      <button class="material-symbols-outlined p-1.5 text-slate-400 hover:text-slate-900 dark:hover:text-white rounded-lg transition-colors">more_vert</button>
+    </div>
+</div>
+ </template>
