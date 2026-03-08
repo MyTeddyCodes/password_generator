@@ -38,7 +38,7 @@ to save password or access vault you would be required to log in
 ## Command Line
 
 ```bash
-python password_gen.py
+python main.py
 ```
 
 ![Example Image 1](./references/reference_1)
@@ -51,7 +51,7 @@ python password_gen.py
 start by running:
 
 ```bash
-python password_gen.py 7
+python main.py 7
 
 ```
 
