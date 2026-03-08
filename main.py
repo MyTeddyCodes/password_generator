@@ -1,4 +1,4 @@
-from src.password_gen import cli_password_generator
+from server.src.password_gen import cli_password_generator
 import sys
 
 
