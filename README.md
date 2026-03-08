@@ -51,7 +51,7 @@ python password_gen.py
 start by running:
 
 ```bash
-python password_gen.py 14
+python password_gen.py 7
 
 ```
 
