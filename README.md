@@ -26,6 +26,7 @@ to run web interface run the below commands:
 cd server
 uvicorn app:app --reload
 ```
+uvicorn will run the web page [on http://127.0.0.1:8000/]
 
 ![Example Web Homepage Image](./references/web_home_page)
 ![Example Web Homepage Image_2](./references/web_vault_image2)
